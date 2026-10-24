@@ -1,0 +1,44 @@
+---
+# Deploys the Gym Membership Portal (FA1) to the EC2 server created by Terraform.
+# Run it from WSL:   ansible-playbook -i inventory.ini deploy.yml
+- name: Deploy Gym Membership Portal to the EC2 instance
+  hosts: web
+  become: true
+
+  vars:
+    # Where the SERVER downloads the code from: the FA1 GitHub repository (it must be public).
+    # To use a different repository, add:  -e repo_url=https://github.com/<your-username>/<your-repo>.git
+    repo_url: "https://github.com/AyanMujawar/gym-membership-management-portal-fa1.git"
+    repo_version: main
+    app_dir: /home/ubuntu/gym-membership-management-portal
+
+  tasks:
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker, the Compose plugin, and git
+      apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - git
+        state: present
+
+    - name: Add the ubuntu user to the docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Clone (or update) the project repository from GitHub
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ repo_version }}"
+        force: yes
+
+    - name: Build and start all containers with Docker Compose
+      command: docker compose up --build -d
+      args:
+        chdir: "{{ app_dir }}"
