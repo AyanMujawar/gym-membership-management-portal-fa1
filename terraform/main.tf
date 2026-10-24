@@ -13,7 +13,7 @@ provider "aws" {
   # Everything this project creates is labelled, so it is easy to tell apart in the AWS console
   default_tags {
     tags = {
-      Project = "gym-fa1"
+      Project = var.name_prefix
     }
   }
 }
@@ -33,13 +33,13 @@ data "aws_ami" "ubuntu" {
 # Registers our local public key with AWS so we can SSH in - no manual key pair
 # creation needed in the console
 resource "aws_key_pair" "deployer" {
-  key_name   = "gym-fa1-key"
+  key_name   = "${var.name_prefix}-key"
   public_key = file(var.ssh_public_key_path)
 }
 
 # Opens the ports our app needs: 22 (SSH, for Ansible), 80 (frontend), 5000 (backend API)
 resource "aws_security_group" "allow_web_ssh" {
-  name        = "gym-fa1-allow-web-ssh"
+  name        = "${var.name_prefix}-allow-web-ssh"
   description = "Allow SSH, HTTP, and backend API traffic"
 
   ingress {
@@ -82,6 +82,12 @@ resource "aws_instance" "gym_portal_vm" {
   vpc_security_group_ids = [aws_security_group.allow_web_ssh.id]
 
   tags = {
-    Name = "gym-fa1-vm"
+    Name = "${var.name_prefix}-vm"
+  }
+
+  # The Ubuntu image lookup above always returns the newest image. Without this, a newer image published
+  # later would make "terraform plan" say the running server must be replaced; the server is left as it is.
+  lifecycle {
+    ignore_changes = [ami]
   }
 }

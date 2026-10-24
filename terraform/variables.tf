@@ -10,6 +10,12 @@ variable "instance_type" {
   default     = "t3.small"
 }
 
+variable "name_prefix" {
+  description = "Prefix for the names of everything Terraform creates. If several people deploy into the same AWS account, each uses a different prefix (terraform apply -var name_prefix=gym-fa1-yourname) so the names do not collide"
+  type        = string
+  default     = "gym-fa1"
+}
+
 variable "ssh_public_key_path" {
   description = "Path to the SSH public key that will be allowed to log into the VM"
   type        = string
